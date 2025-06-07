@@ -69,15 +69,15 @@ jobs:
       - name: 6. Build and Push Docker Image (Advanced)
         env:
           MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_OWNER }}/${{ secrets.DAGSHUB_REPO_NAME }}.mlflow"
+        shell: bash -l {0}
         run: |
-          MODEL_NAME="MushroomClassifierRF"
+          echo "INFO: Mengaktifkan environment conda..."
+          conda activate mushroom-env
 
+          echo "INFO: Membangun image Docker dari model..."
+          MODEL_NAME="MushroomClassifierRF"
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
-          # Membangun image Docker dari model versi "latest" yang terdaftar
           mlflow models build-docker --model-uri "models:/${MODEL_NAME}/latest" --name "${IMAGE_NAME}" --enable-mlserver
-
-          # Mendorong image ke Docker Hub
           docker push "${IMAGE_NAME}"
-
           echo "Docker image ${IMAGE_NAME} berhasil di-push ke Docker Hub."
