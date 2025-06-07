@@ -29,8 +29,16 @@ jobs:
         with:
           auto-update-conda: true
           python-version: "3.12"
-      - name: 3.5 Install MLflow and DagsHub in Runner
-        run: pip install mlflow==2.19.0 dagshub
+
+      - name: 3.5 Debug Environment Variables
+        run: |
+          echo "DEBUG: DagsHub Owner is ${{ secrets.DAGSHUB_OWNER }}"
+          echo "DEBUG: DagsHub Repo Name is ${{ secrets.DAGSHUB_REPO_NAME }}"
+          if [ -n "${{ secrets.DAGSHUB_TOKEN }}" ]; then
+            echo "DEBUG: DagsHub Token is SET."
+          else
+            echo "DEBUG: DagsHub Token is NOT SET or EMPTY!"
+          fi
 
       - name: 4. Create Conda Env & Run Training
         env:
