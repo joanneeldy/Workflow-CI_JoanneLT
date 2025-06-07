@@ -29,6 +29,8 @@ jobs:
         with:
           auto-update-conda: true
           python-version: "3.12"
+      - name: 3.5 Install MLflow and DagsHub in Runner
+        run: pip install mlflow==2.19.0 dagshub
 
       - name: 4. Run MLflow Project (Training)
         env:
