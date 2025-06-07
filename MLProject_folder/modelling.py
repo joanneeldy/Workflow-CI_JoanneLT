@@ -154,14 +154,16 @@ with mlflow.start_run(run_name="Mushroom Classification Tuning (Random Forest)")
     plt.close()
     print("Plot Feature Importance berhasil di-log.")
 
+    input_example = X_train.head(1)
+
     # Log (simpan) model ke MLflow
-    # `registered_model_name` sangat penting untuk Kriteria 3 & 4
     mlflow.sklearn.log_model(
         sk_model=best_model,
         artifact_path="mushroom-classifier-model",
-        registered_model_name="MushroomClassifierRF"
+        registered_model_name="MushroomClassifierRF",
+        input_example=input_example
     )
-    print("Model berhasil di-log ke MLflow.")
+    print("Model berhasil di-log ke MLflow dengan input signature.")
 
     print("\nEksperimen selesai! Cek hasilnya di DagsHub:")
     dagshub_link = (
