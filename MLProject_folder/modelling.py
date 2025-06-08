@@ -22,6 +22,18 @@ from sklearn.metrics import (
     f1_score,
     confusion_matrix
 )
+import sys
+
+print("INFO: Memverifikasi DagsHub Token...")
+if 'DAGSHUB_USER_TOKEN' not in os.environ:
+    print("="*80)
+    print("ERROR: DAGSHUB_USER_TOKEN tidak ditemukan di environment variable!")
+    print("PASTIKAN ANDA SUDAH MENAMBAHKAN SECRET BERNAMA 'DAGSHUB_TOKEN' DI REPOSITORY GITHUB ANDA.")
+    print("DAN MEMASTIKAN FILE .YML ANDA SUDAH BENAR.")
+    print("="*80)
+    sys.exit(1)
+
+print("SUCCESS: DagsHub Token ditemukan.")
 
 # KONFIGURASI DAGSHUB & MLFLOW
 # Membaca dari environment variables (GitHub Secrets) yang akan di-supply oleh GitHub Actions
