@@ -1,11 +1,11 @@
-name: Model CI - Training, Artifact Storage, and Docker Push (Final)
+name: Final CI - Training, Artifact, Docker
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'MLProject_folder/**'
+      - "MLProject_folder/**"
   workflow_dispatch:
 
 jobs:
@@ -20,9 +20,10 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: 3. Run Training using MLProject structure
+      - name: 3. Run Training Script (Manual Conda Method)
+        # Menjalankan script secara manual menggunakan conda untuk menghindari bug `mlflow run`
         env:
           DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
           DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
@@ -38,12 +39,11 @@ jobs:
           conda activate mushroom-env
 
           echo "INFO: Menjalankan script training Python..."
-          # Menjalankan script dari dalam folder MLProject
-          python MLProject_folder/modelling_tuning.py
+          python MLProject_folder/modelling.py
 
           echo "INFO: Training selesai."
 
-      - name: 4. Save MLflow artifacts to GitHub (Skilled Requirement)
+      - name: 4. Save MLflow Artifacts to GitHub (Skilled Requirement)
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -51,7 +51,7 @@ jobs:
           path: mlruns/
 
       - name: 5. Log in to Docker Hub
-        if: success() # Hanya jalankan jika training berhasil
+        if: success()
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
@@ -59,10 +59,11 @@ jobs:
 
       - name: 6. Build and Push Docker Image (Advanced Requirement)
         if: success()
-        run: pip install mlflow==2.19.0
         env:
           MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_OWNER }}/${{ secrets.DAGSHUB_REPO_NAME }}.mlflow"
         run: |
+          pip install mlflow==2.19.0
+
           MODEL_NAME="MushroomClassifierRF"
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
