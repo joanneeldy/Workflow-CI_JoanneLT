@@ -25,37 +25,29 @@ jobs:
 
       - name: 3. Run Training with Enhanced Debugging
         id: training_step
-        env:
-          DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
-          DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
-          DAGSHUB_USER_TOKEN: ${{ secrets.DAGSHUB_TOKEN }}
-          MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_OWNER }}
-          MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
+        # KOSONGKAN BAGIAN env INI KARENA TIDAK MENGHUBUNGI DAGSHUB
+        # env:
+        #   DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
         shell: bash -l {0}
         run: |
-          set -e # Hentikan skrip jika ada perintah yang gagal
+          set -e
 
           echo "--- Menampilkan Struktur File dan Folder ---"
-          ls -R # PERINTAH DEBUG: Menampilkan semua file, cek apakah path Anda benar
+          ls -R
           echo "-------------------------------------------"
 
           echo "INFO: Pindah ke direktori kerja..."
-          cd MLProject_folder # WAJIB SAMA: Sesuaikan dengan nama folder Anda
+          cd MLProject_folder
 
-          echo "INFO: Menjalankan training via mlflow run..."
-          # Menggunakan 'tee' agar log error tampil di console DAN tersimpan di file
+          echo "INFO: Menjalankan training via mlflow run (LOCAL TEST)..."
           mlflow run . | tee ../modelling_log.txt
 
           echo "INFO: Training complete."
           cd ..
 
-          # Validasi dan ekstrak Run ID dengan lebih aman
           RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
           if [ -z "$RUN_ID" ]; then
-            echo "::error::Tidak bisa menemukan MLflow Run ID di log. Skrip training kemungkinan gagal."
-            echo "--- Isi Log Training ---"
-            cat modelling_log.txt
-            echo "--- Akhir Log ---"
+            echo "::error::Tidak bisa menemukan MLflow Run ID di log."
             exit 1
           fi
 
