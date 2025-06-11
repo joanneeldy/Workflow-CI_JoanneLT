@@ -1,4 +1,6 @@
 import os
+if "SSL_CERT_FILE" in os.environ:
+    del os.environ["SSL_CERT_FILE"]
 import sys
 import pandas as pd
 import mlflow
@@ -35,6 +37,16 @@ print(f"Data berhasil dimuat. Ukuran data latih: {X_train.shape}")
 
 # HYPERPARAMETER TUNING & TRAINING
 with mlflow.start_run(run_name="Tuning RandomForest from CI") as run:
+     input_example = X_train.head(1)
+    
+    # Log model dengan artifact_path 'model'
+    mlflow.sklearn.log_model(
+        sk_model=best_model,
+        artifact_path="model",  # <-- Pastikan path-nya "model"
+        registered_model_name="MushroomClassifierRF",
+        input_example=input_example
+    )
+
     run_id = run.info.run_id
     print(f"MLflow Run ID: {run_id}")
     mlflow.set_tag("Model Type", "Random Forest Classifier")

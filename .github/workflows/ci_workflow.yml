@@ -1,4 +1,4 @@
-name: Final CI - Training, Artifact, Docker
+name: Model CI - Training, Artifact Storage, and Docker Push (Final)
 
 on:
   push:
@@ -16,13 +16,13 @@ jobs:
       - name: 1. Checkout Repository
         uses: actions/checkout@v4
 
-      - name: 2. Set up Conda
+      - name: 2. Set up Conda Environment
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
           python-version: "3.12"
 
-      - name: 3. Run Training and Get Run ID
+      - name: 3. Run Training Script via Conda (Correct Method)
         id: training_step # Memberi ID pada langkah ini
         env:
           DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
@@ -32,24 +32,27 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         shell: bash -l {0}
         run: |
-          echo "INFO: Membuat environment conda..."
+          echo "INFO: Membuat environment conda dari MLProject_folder/conda.yaml..."
           conda env create -f MLProject_folder/conda.yaml --name mushroom-env
+
+          echo "INFO: Mengaktifkan environment..."
           conda activate mushroom-env
-          echo "INFO: Menjalankan script training..."
+
+          echo "INFO: Menjalankan script training Python..."
           # Menjalankan script dan menyimpan outputnya ke file log
           python MLProject_folder/modelling.py > modelling_log.txt
+
           echo "INFO: Training selesai."
 
           # Mengambil Run ID dari log dan menyetelnya sebagai output
           RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
-          echo "RUN_ID=$RUN_ID" >> $GITHUB_OUTPUT
+          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
       - name: 4. Download Artifacts from DagsHub
-        # download artefak dari DagsHub untuk disimpan ke GitHub
         run: |
           pip install mlflow==2.19.0 dagshub
           dagshub.init(repo_owner='${{ secrets.DAGSHUB_OWNER }}', repo_name='${{ secrets.DAGSHUB_REPO_NAME }}', mlflow=True)
-          mlflow.artifacts.download_artifacts(run_id='${{ steps.training_step.outputs.RUN_ID }}', dst_path='./mlflow_artifacts')
+          mlflow.artifacts.download_artifacts(run_id='${{ steps.training_step.outputs.run_id }}', dst_path='./mlflow_artifacts')
         shell: python {0}
 
       - name: 5. Save MLflow artifacts to GitHub (Skilled Requirement)
@@ -68,7 +71,7 @@ jobs:
         run: |
           pip install mlflow==2.19.0
 
-          MODEL_URI="runs:/${{ steps.training_step.outputs.RUN_ID }}/model"
+          MODEL_URI="runs:/${{ steps.training_step.outputs.run_id }}/model" # Menggunakan artifact path 'model'
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
           echo "INFO: Membangun Docker image dari URI: $MODEL_URI"
