@@ -37,7 +37,7 @@ print(f"Data berhasil dimuat. Ukuran data latih: {X_train.shape}")
 
 # HYPERPARAMETER TUNING & TRAINING
 with mlflow.start_run(run_name="Tuning RandomForest from CI") as run:
-     input_example = X_train.head(1)
+    input_example = X_train.head(1)
     
     # Log model dengan artifact_path 'model'
     mlflow.sklearn.log_model(
