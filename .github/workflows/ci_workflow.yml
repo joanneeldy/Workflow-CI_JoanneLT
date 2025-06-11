@@ -81,3 +81,15 @@ jobs:
           mlflow models build-docker --model-uri "models:/${MODEL_NAME}/latest" --name "${IMAGE_NAME}" --enable-mlserver
           docker push "${IMAGE_NAME}"
           echo "Docker image ${IMAGE_NAME} berhasil di-push ke Docker Hub."
+
+      # ... (langkah '6. Build and Push Docker Image (Advanced)' di atasnya) ...
+
+      - name: 7. Upload MLflow Run Artifact to GitHub
+        # if: always() akan menjalankan langkah ini meskipun langkah sebelumnya gagal
+        # Berguna untuk men-debug artefak dari run yang error
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow-run-artifact
+          # Path ke folder mlruns yang dibuat oleh mlflow di dalam runner
+          path: MLProject_folder/mlruns/
