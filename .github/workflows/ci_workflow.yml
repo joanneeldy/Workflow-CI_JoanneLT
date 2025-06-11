@@ -1,4 +1,4 @@
-name: Model CI - Train, Artifact, and Docker Push
+name: Model CI - Local Train, Artifact, and Docker Push
 
 on:
   push:
@@ -23,34 +23,20 @@ jobs:
           environment-file: MLProject_folder/conda.yaml
           activate-environment: mushroom-env
 
-      - name: 3. Run Training with Enhanced Debugging
+      - name: 3. Run Local Training
         id: training_step
-        # KOSONGKAN BAGIAN env INI KARENA TIDAK MENGHUBUNGI DAGSHUB
-        # env:
-        #   DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
         shell: bash -l {0}
         run: |
           set -e
-
-          echo "--- Menampilkan Struktur File dan Folder ---"
-          ls -R
-          echo "-------------------------------------------"
-
-          echo "INFO: Pindah ke direktori kerja..."
           cd MLProject_folder
-
           echo "INFO: Menjalankan training via mlflow run (LOCAL TEST)..."
           mlflow run . | tee ../modelling_log.txt
-
-          echo "INFO: Training complete."
           cd ..
-
           RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
           if [ -z "$RUN_ID" ]; then
             echo "::error::Tidak bisa menemukan MLflow Run ID di log."
             exit 1
           fi
-
           echo "Berhasil mendapatkan MLflow Run ID: $RUN_ID"
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
@@ -61,13 +47,17 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: 5. Build and Push Docker Image
+        env:
+          # BERI TAHU MLFLOW LOKASI 'mlruns' SECARA EKSPLISIT
+          MLFLOW_TRACKING_URI: ./MLProject_folder
         shell: bash -l {0}
         run: |
           set -e
+          # MLflow tahu harus mencari 'runs:/...' di dalam folder ./MLProject_folder/mlruns
           MODEL_URI="runs:/${{ steps.training_step.outputs.run_id }}/model"
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
-          echo "INFO: Membangun Docker image dari URI: $MODEL_URI"
+          echo "INFO: Membangun Docker image dari URI LOKAL: $MODEL_URI"
           mlflow models build-docker --model-uri "$MODEL_URI" --name "$IMAGE_NAME"
 
           echo "INFO: Mendorong image ke Docker Hub..."
