@@ -1,4 +1,4 @@
-name: mlops-mushroom-env
+name: mushroom-env
 channels:
   - defaults
   - conda-forge
@@ -6,7 +6,7 @@ dependencies:
   - python=3.12
   - pip
   - pip:
-      - mlflow==2.19.0
+      - mlflow==2.13.2
       - pandas
       - scikit-learn
       - dagshub
