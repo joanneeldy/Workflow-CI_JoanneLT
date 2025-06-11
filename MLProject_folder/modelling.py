@@ -69,6 +69,16 @@ print(f"Data berhasil dimuat. Ukuran data latih: {X_train.shape}, Ukuran data uj
 
 # Mulai eksperimen MLflow
 with mlflow.start_run(run_name="Mushroom Classification Tuning (Random Forest)") as run:
+    input_example = X_train.head(1)
+    
+    # Log model dengan artifact_path 'model'
+    mlflow.sklearn.log_model(
+        sk_model=best_model,
+        artifact_path="model",
+        registered_model_name="MushroomClassifierRF",
+        input_example=input_example
+    )
+
     run_id = run.info.run_id
     print(f"MLflow Run ID: {run_id}")
     mlflow.set_tag("Model Type", "Random Forest Classifier")
