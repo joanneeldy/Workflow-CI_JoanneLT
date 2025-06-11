@@ -29,7 +29,7 @@ mlflow.set_tracking_uri(f"https://dagshub.com/{DAGSHUB_REPO_OWNER}/{DAGSHUB_REPO
 
 # MEMUAT DAN MEMBAGI DATA
 print("Memuat data...")
-df = pd.read_csv('mushrooms_preprocessing/mushrooms_preprocessed.csv')
+df = pd.read_csv('MLProject_folder/mushrooms_preprocessing/mushrooms_preprocessed.csv')
 X = df.drop('class', axis=1)
 y = df['class']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
@@ -37,16 +37,6 @@ print(f"Data berhasil dimuat. Ukuran data latih: {X_train.shape}")
 
 # HYPERPARAMETER TUNING & TRAINING
 with mlflow.start_run(run_name="Tuning RandomForest from CI") as run:
-    input_example = X_train.head(1)
-    
-    # Log model dengan artifact_path 'model'
-    mlflow.sklearn.log_model(
-        sk_model=best_model,
-        artifact_path="model",  # <-- Pastikan path-nya "model"
-        registered_model_name="MushroomClassifierRF",
-        input_example=input_example
-    )
-
     run_id = run.info.run_id
     print(f"MLflow Run ID: {run_id}")
     mlflow.set_tag("Model Type", "Random Forest Classifier")
