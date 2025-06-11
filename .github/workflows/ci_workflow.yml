@@ -53,16 +53,17 @@ jobs:
           pip install dagshub
 
           python -c "
-import mlflow
-import dagshub
+          import mlflow
+          import dagshub
 
-dagshub.init(repo_owner='${{ env.DAGSHUB_OWNER }}', repo_name='${{ env.DAGSHUB_REPO_NAME }}', mlflow=True)
-mlflow.artifacts.download_artifacts(
-    run_id='${{ steps.training_step.outputs.run_id }}', 
-    dst_path='./mlflow_artifacts'
-)
-print('✅ Artifacts downloaded successfully.')
-"
+          dagshub.init(repo_owner='${{ env.DAGSHUB_OWNER }}', repo_name='${{ env.DAGSHUB_REPO_NAME }}', mlflow=True)
+          mlflow.artifacts.download_artifacts(
+          run_id='${{ steps.training_step.outputs.run_id }}', 
+          dst_path='./mlflow_artifacts'
+          )
+          print('✅ Artifacts downloaded successfully.')
+          "
+
       - name: 5. Save MLflow artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:
