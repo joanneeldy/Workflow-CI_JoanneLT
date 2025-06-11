@@ -23,7 +23,7 @@ jobs:
           python-version: "3.12"
           create-environment-file: MLProject_folder/conda.yaml
           environment-file: MLProject_folder/conda.yaml
-          activate-environment: mushroom-env # Name from your conda.yaml
+          activate-environment: mushroom-env
 
       - name: 3. Run Training Script
         id: training_step
