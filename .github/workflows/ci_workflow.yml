@@ -23,7 +23,7 @@ jobs:
           environment-file: MLProject_folder/conda.yaml
           activate-environment: mushroom-env
 
-      - name: 3. Run Training with MLflow Project
+      - name: 3. Run Training with Enhanced Debugging
         id: training_step
         env:
           DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
@@ -35,9 +35,15 @@ jobs:
         run: |
           set -e # Hentikan skrip jika ada perintah yang gagal
 
-          echo "INFO: Running training via mlflow run..."
-          cd MLProject_folder
+          echo "--- Menampilkan Struktur File dan Folder ---"
+          ls -R # PERINTAH DEBUG: Menampilkan semua file, cek apakah path Anda benar
+          echo "-------------------------------------------"
 
+          echo "INFO: Pindah ke direktori kerja..."
+          cd MLProject_folder # WAJIB SAMA: Sesuaikan dengan nama folder Anda
+
+          echo "INFO: Menjalankan training via mlflow run..."
+          # Menggunakan 'tee' agar log error tampil di console DAN tersimpan di file
           mlflow run . | tee ../modelling_log.txt
 
           echo "INFO: Training complete."
@@ -46,31 +52,24 @@ jobs:
           # Validasi dan ekstrak Run ID dengan lebih aman
           RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
           if [ -z "$RUN_ID" ]; then
-            echo "::error::Could not find MLflow Run ID in the log. The training script might have failed."
-            echo "--- Log Content ---"
+            echo "::error::Tidak bisa menemukan MLflow Run ID di log. Skrip training kemungkinan gagal."
+            echo "--- Isi Log Training ---"
             cat modelling_log.txt
-            echo "--- End Log Content ---"
+            echo "--- Akhir Log ---"
             exit 1
           fi
 
-          echo "Extracted MLflow Run ID: $RUN_ID"
+          echo "Berhasil mendapatkan MLflow Run ID: $RUN_ID"
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: 4. Upload Training Log as Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: training-log
-          path: modelling_log.txt
-
-      - name: 5. Log in to Docker Hub
+      - name: 4. Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 6. Build and Push Docker Image
+      - name: 5. Build and Push Docker Image
         env:
-          # Set variabel environment agar mlflow tahu di mana harus mencari run
           MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_OWNER }}/${{ secrets.DAGSHUB_REPO_NAME }}.mlflow"
           MLFLOW_TRACKING_USERNAME: ${{ secrets.DAGSHUB_OWNER }}
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
@@ -78,12 +77,11 @@ jobs:
         run: |
           set -e
           MODEL_URI="runs:/${{ steps.training_step.outputs.run_id }}/model"
-          # Gunakan commit SHA untuk tag yang unik
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
-          echo "INFO: Building Docker image from URI: $MODEL_URI"
+          echo "INFO: Membangun Docker image dari URI: $MODEL_URI"
           mlflow models build-docker --model-uri "$MODEL_URI" --name "$IMAGE_NAME"
 
-          echo "INFO: Pushing image to Docker Hub..."
+          echo "INFO: Mendorong image ke Docker Hub..."
           docker push "$IMAGE_NAME"
-          echo "✅ Docker image ${IMAGE_NAME} pushed successfully."
+          echo "✅ Docker image ${IMAGE_NAME} berhasil didorong."
