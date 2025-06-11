@@ -1,17 +1,17 @@
-name: Model CI - Training and Docker Push
+name: Model CI - Training, Artifact Storage, and Docker Push
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'MLProject_folder/**'
+      - "MLProject_folder/**"
   workflow_dispatch:
 
 jobs:
   train-and-build-docker:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 1. Checkout Repository
         uses: actions/checkout@v4
@@ -20,9 +20,9 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
-          python-version: '3.12'
+          python-version: "3.12"
 
-      - name: 3. Run Training Script via Conda
+      - name: 3. Run Training Script via Conda (Correct Method)
         env:
           DAGSHUB_OWNER: ${{ secrets.DAGSHUB_OWNER }}
           DAGSHUB_REPO_NAME: ${{ secrets.DAGSHUB_REPO_NAME }}
@@ -31,7 +31,7 @@ jobs:
           MLFLOW_TRACKING_PASSWORD: ${{ secrets.DAGSHUB_TOKEN }}
         shell: bash -l {0}
         run: |
-          echo "INFO: Membuat environment conda dari file MLProject_folder/conda.yaml..."
+          echo "INFO: Membuat environment conda dari MLProject_folder/conda.yaml..."
           conda env create -f MLProject_folder/conda.yaml --name mushroom-env
 
           echo "INFO: Mengaktifkan environment..."
@@ -46,25 +46,29 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mlflow-artifacts-from-run
+          name: mlflow-artifacts
           path: mlruns/
-      
+
       - name: 5. Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      
+
       - name: 6. Build and Push Docker Image (Advanced Requirement)
-        run: pip install mlflow==2.19.0
         env:
           MLFLOW_TRACKING_URI: "https://dagshub.com/${{ secrets.DAGSHUB_OWNER }}/${{ secrets.DAGSHUB_REPO_NAME }}.mlflow"
         shell: bash -l {0}
         run: |
+          pip install mlflow==2.19.0
+
           MODEL_NAME="MushroomClassifierRF"
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
-          
-          # MLflow butuh di-install di environment utama untuk menjalankan perintah ini
+
+          echo "INFO: Membangun Docker image dari model..."
           mlflow models build-docker --model-uri "models:/${MODEL_NAME}/latest" --name "${IMAGE_NAME}" --enable-mlserver
+
+          echo "INFO: Mendorong image ke Docker Hub..."
           docker push "${IMAGE_NAME}"
-          echo "Docker image ${IMAGE_NAME} berhasil di-push ke Docker Hub."
+
+          echo "Docker image ${IMAGE_NAME} berhasil di-push."
