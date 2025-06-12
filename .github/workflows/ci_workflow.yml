@@ -1,4 +1,4 @@
-name: Model CI - Local Train, Artifact, and Docker Push
+name: Model CI - FINAL DIAGNOSIS
 
 on:
   push:
@@ -40,24 +40,31 @@ jobs:
           echo "Berhasil mendapatkan MLflow Run ID: $RUN_ID"
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: 4. Log in to Docker Hub
+      - name: 4. Debug - List All Files After Training
+        run: |
+          echo "===================================================="
+          echo "MENAMPILKAN SEMUA FILE DARI ROOT REPOSITORY"
+          echo "===================================================="
+          ls -R
+          echo "===================================================="
+
+      - name: 5. Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 5. Build and Push Docker Image
+      - name: 6. Build and Push Docker Image
         env:
-          # BERI TAHU MLFLOW LOKASI 'mlruns' SECARA EKSPLISIT
-          MLFLOW_TRACKING_URI: ./MLProject_folder
+          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/MLProject_folder"
         shell: bash -l {0}
         run: |
           set -e
-          # MLflow tahu harus mencari 'runs:/...' di dalam folder ./MLProject_folder/mlruns
           MODEL_URI="runs:/${{ steps.training_step.outputs.run_id }}/model"
           IMAGE_NAME="${{ secrets.DOCKERHUB_USERNAME }}/mushroom-classifier-msml:${{ github.sha }}"
 
           echo "INFO: Membangun Docker image dari URI LOKAL: $MODEL_URI"
+          echo "INFO: Tracking URI yang digunakan: $MLFLOW_TRACKING_URI"
           mlflow models build-docker --model-uri "$MODEL_URI" --name "$IMAGE_NAME"
 
           echo "INFO: Mendorong image ke Docker Hub..."
