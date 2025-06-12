@@ -1,4 +1,4 @@
-name: Model CI - FINAL DIAGNOSIS
+name: Model CI - FINAL VERSION
 
 on:
   push:
@@ -23,14 +23,16 @@ jobs:
           environment-file: MLProject_folder/conda.yaml
           activate-environment: mushroom-env
 
-      - name: 3. Run Local Training
+      - name: 3. Run Training Directly
         id: training_step
         shell: bash -l {0}
         run: |
           set -e
           cd MLProject_folder
-          echo "INFO: Menjalankan training via mlflow run (LOCAL TEST)..."
-          mlflow run . | tee ../modelling_log.txt
+
+          echo "INFO: Menjalankan skrip training python secara langsung..."
+          python modelling.py | tee ../modelling_log.txt
+
           cd ..
           RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
           if [ -z "$RUN_ID" ]; then
@@ -40,11 +42,10 @@ jobs:
           echo "Berhasil mendapatkan MLflow Run ID: $RUN_ID"
           echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
 
-      - name: 4. Debug - List All Files After Training
+      - name: 4. Debug - Verify mlruns creation
         run: |
           echo "===================================================="
-          echo "MENAMPILKAN SEMUA FILE DARI ROOT REPOSITORY"
-          echo "===================================================="
+          echo "Verifikasi lokasi folder mlruns"
           ls -R
           echo "===================================================="
 
