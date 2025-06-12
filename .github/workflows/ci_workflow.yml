@@ -1,4 +1,4 @@
-name: Model CI - THE BENAR2 FIX VERSION
+name: Model CI - THE FIXXXXX VERSION
 
 on:
   push:
@@ -57,8 +57,7 @@ jobs:
           echo "INFO: Building Docker image from local URI: $MODEL_URI"
           echo "INFO: Using Tracking URI: $MLFLOW_TRACKING_URI"
 
-          # Solusi pamungkas: Gunakan environment manager lokal
-          mlflow models build-docker --model-uri "$MODEL_URI" --name "$IMAGE_NAME" --env-manager local
+          mlflow models build-docker --model-uri "$MODEL_URI" --name "$IMAGE_NAME" --enable-mlserver
 
           echo "INFO: Pushing image to Docker Hub..."
           docker push "$IMAGE_NAME"
