@@ -63,7 +63,7 @@ jobs:
 
       - name: 9. Build and Push Docker Image
         env:
-          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/MLProject_folder/mlruns"
+          MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/mlruns"
         shell: bash -l {0}
         run: |
           set -e
