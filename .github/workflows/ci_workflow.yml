@@ -8,6 +8,9 @@ on:
       - "MLProject_folder/**"
   workflow_dispatch:
 
+env:
+  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 jobs:
   train-and-build-docker:
     runs-on: ubuntu-latest
@@ -22,30 +25,42 @@ jobs:
           auto-update-conda: true
           environment-file: MLProject_folder/conda.yaml
           activate-environment: mushroom-env
-
-      - name: 3. Run Training Directly
-        id: training_step
-        shell: bash -l {0}
+          
+      - name: 3. Run mlflow project
         run: |
-          set -e
-          cd MLProject_folder
-          python modelling.py | tee ../modelling_log.txt
-          cd ..
-          RUN_ID=$(grep 'MLflow Run ID:' modelling_log.txt | awk '{print $4}')
-          if [ -z "$RUN_ID" ]; then
-            echo "::error::Could not find MLflow Run ID."
-            exit 1
-          fi
-          echo "Run ID captured: $RUN_ID"
-          echo "run_id=$RUN_ID" >> $GITHUB_OUTPUT
-
-      - name: 4. Log in to Docker Hub
+          source $(conda info --base)/etc/profile.d/conda.sh
+          conda activate mushroom-env
+          mlflow run ./MLProject
+          
+      - name: 4. Get latest MLflow run_id
+        run: |
+          RUN_ID=$(ls -td mlruns/0/*/ | head -n 1 | cut -d'/' -f3)
+          echo "RUN_ID=$RUN_ID" >> $GITHUB_ENV
+          echo "Latest run_id: $RUN_ID"
+          
+      - name: 5. Archive model artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mlflow_model
+          path: MLProject/artifacts/mlflow_model
+          
+      - name: 6. Set SHA
+        run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
+        
+      - name: 7. Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ml_model_${{ env.SHORT_SHA }}
+          name: 'Model Release'
+          files: MLProject_folder/mlruns/**
+          
+      - name: 8. Log in to Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: 5. Build and Push Docker Image
+      - name: 9. Build and Push Docker Image
         env:
           MLFLOW_TRACKING_URI: "file://${{ github.workspace }}/MLProject_folder/mlruns"
         shell: bash -l {0}
