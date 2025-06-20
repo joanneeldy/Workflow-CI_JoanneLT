@@ -42,7 +42,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: mlflow_model
-          path: MLProject/artifacts/mlflow_model
+          path: MLProject_folder/mlruns/
           
       - name: 6. Set SHA
         run: echo "SHORT_SHA=${GITHUB_SHA::7}" >> $GITHUB_ENV
